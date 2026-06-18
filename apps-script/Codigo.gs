@@ -4,33 +4,25 @@
  * Recebe os lançamentos do app web (GitHub Pages) e grava na aba
  * "📋 Lançamentos" da planilha do casal.
  *
- * COMO PUBLICAR:
- * 1. Abra https://script.google.com e crie um novo projeto.
- * 2. Cole este código no arquivo Codigo.gs.
- * 3. Implantar → Nova implantação → Tipo: App da Web.
- *    - Executar como: Eu (sua conta Google que tem acesso à planilha)
- *    - Quem pode acessar: Qualquer pessoa
- * 4. Copie a URL gerada (termina em /exec) e cole em js/app.js (CONFIG.APPS_SCRIPT_URL).
+ * SENHA: NÃO fica no código. Fica nas "Propriedades do Script"
+ * (Configurações do projeto → Propriedades do script → chave: SENHA).
+ * Assim o código pode ser público (GitHub) e ser reenviado via clasp
+ * sem nunca expor nem sobrescrever a senha.
  *
- * Observação: a planilha precisa estar acessível pela conta que executa o script.
- * Como "Executar como: Eu", basta que VOCÊ tenha acesso de edição à planilha —
- * não é necessária Service Account.
+ * DEPLOY: feito via clasp (CLI) — `clasp push` envia este arquivo e
+ * `clasp deploy -i <deploymentId>` atualiza o Web App mantendo a mesma URL.
  */
 
 const SHEET_ID = '1QE7R_i9NvSOWZC4jfHQOda1sm4WUMKR5f-JN5ppkrQI';
 const ABA = '📋 Lançamentos';
 
-// ⚠️ SENHA: defina a senha real DIRETO no editor do Apps Script (script.google.com),
-// NÃO neste arquivo do repositório. Como o repo é público (GitHub Pages), deixar a senha
-// aqui a tornaria visível para qualquer pessoa. A senha real fica só no backend publicado.
-const SENHA = 'DEFINA_NO_APPS_SCRIPT';
-
 function doPost(e) {
   try {
     const data = JSON.parse(e.postData.contents);
+    const SENHA = PropertiesService.getScriptProperties().getProperty('SENHA');
 
     // Validação da senha (token) — vale para login e para gravação.
-    if (data.token !== SENHA) {
+    if (!SENHA || data.token !== SENHA) {
       return jsonResponse({ ok: false, error: 'nao-autorizado' });
     }
 
@@ -57,7 +49,6 @@ function doPost(e) {
 
     const ss = SpreadsheetApp.openById(SHEET_ID);
     const sheet = ss.getSheetByName(ABA);
-
     if (!sheet) {
       return jsonResponse({ ok: false, error: 'Aba "' + ABA + '" não encontrada' });
     }

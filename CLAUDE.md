@@ -141,8 +141,12 @@ Arquivo: `apps-script/Codigo.gs`. Publicado como **App da Web** em <https://scri
 
 - **Executar como:** Eu (conta com acesso de edição à planilha)
 - **Quem pode acessar:** Qualquer pessoa
-- **Senha:** constante `SENHA` no topo do `Codigo.gs`. Validada em todo `doPost`; fica só no
-  backend, nunca no JS público. Trocar a senha exige reimplantar (Nova versão).
+- **Senha:** guardada nas **Propriedades do Script** (chave `SENHA`), lida via
+  `PropertiesService` no `doPost`. **Não fica no código** — assim o repo é público e o código
+  pode ser reenviado via clasp sem expor/sobrescrever a senha. Trocar = editar a propriedade.
+- **Deploy:** via [clasp](https://github.com/google/clasp). `clasp push` envia `apps-script/`;
+  `clasp deploy -i <deploymentId>` atualiza o Web App mantendo a mesma URL `/exec`.
+  Pré-requisitos (uma vez): Apps Script API habilitada, `clasp login`, propriedade `SENHA` criada.
 - **Endpoints:**
   - `doPost(e)` com `{ action: 'verificar', token }` — valida a senha (usado pela tela de login)
   - `doPost(e)` com `{ token, row: [...] }` — grava a linha (rejeita se `token` ≠ `SENHA`)

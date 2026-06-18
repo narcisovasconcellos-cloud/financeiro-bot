@@ -84,13 +84,28 @@ ID | Data | Quem | Tipo | Categoria | Descrição | Valor | Parcela Nº | Total 
 
 ## 🔒 Senha de acesso
 
-O app abre com uma **tela de bloqueio**. A senha é definida em `const SENHA` no
-[`apps-script/Codigo.gs`](apps-script/Codigo.gs) — ela fica **só no backend**, nunca no JS público.
+O app abre com uma **tela de bloqueio**. A senha **não fica no código** — ela é guardada nas
+**Propriedades do Script** do Apps Script (Configurações do projeto → Propriedades do script →
+chave `SENHA`). Assim o repositório pode ser público e o código pode ser reenviado via clasp
+sem nunca expor nem sobrescrever a senha.
 
 - O navegador guarda a senha (localStorage), então cada pessoa digita só uma vez por aparelho.
 - O backend valida a senha em **todo** envio: sem ela, não grava nada na planilha.
-- Para trocar a senha: altere `const SENHA` no Apps Script e **reimplante** (Implantar → Gerenciar
-  implantações → editar → Nova versão). Quem já estava logado precisará entrar de novo.
+- Para trocar a senha: edite a propriedade `SENHA` em Configurações do projeto e reimplante.
+
+## 🛠️ Deploy do backend via clasp
+
+O backend é versionado neste repo (`apps-script/`) e publicado com o
+[clasp](https://github.com/google/clasp) (CLI oficial do Apps Script), sem copiar/colar:
+
+```bash
+clasp push                 # envia apps-script/ para o projeto Apps Script
+clasp deploy -i <id>       # atualiza o Web App mantendo a MESMA URL /exec
+```
+
+Pré-requisitos (uma vez): habilitar a Apps Script API em
+<https://script.google.com/home/usersettings>, rodar `clasp login` e definir a propriedade
+`SENHA` no projeto.
 
 ## ⚠️ Notas
 
