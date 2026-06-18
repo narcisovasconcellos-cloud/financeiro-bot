@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>💰 Financeiro Família</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --verde: #1a3d2b;
+      --verde-medio: #2d6a4f;
+      --verde-claro: #52b788;
+      --verde-palido: #d8f3dc;
+      --creme: #faf7f2;
+      --creme-escuro: #f0ebe0;
+      --texto: #1c1c1c;
+      --texto-suave: #6b7280;
+      --vermelho: #c0392b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--creme); color: var(--texto); min-height: 100vh; }
+    .header { background: var(--verde); padding: 20px 24px 28px; position: relative; overflow: hidden; }
+    .header::before { content: ''; position: absolute; top: -40px; right: -40px; width: 160px; height: 160px; border-radius: 50%; background: rgba(82,183,136,0.15); }
+    .header-title { font-family: 'DM Serif Display', serif; color: #fff; font-size: 26px; line-height: 1.2; position: relative; z-index: 1; }
+    .header-subtitle { color: var(--verde-claro); font-size: 13px; margin-top: 4px; font-weight: 300; position: relative; z-index: 1; }
+    .tipo-tabs { display: grid; grid-template-columns: 1fr 1fr; }
+    .tipo-tab { padding: 14px; text-align: center; font-size: 14px; font-weight: 600; cursor: pointer; border: none; background: var(--creme-escuro); color: var(--texto-suave); font-family: 'DM Sans', sans-serif; }
+    .tipo-tab.despesa.active { background: var(--vermelho); color: #fff; }
+    .tipo-tab.receita.active { background: var(--verde-medio); color: #fff; }
+    .form-container { padding: 20px 16px 100px; max-width: 480px; margin: 0 auto; }
+    .field-group { margin-bottom: 16px; }
+    label { display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--texto-suave); margin-bottom: 6px; }
+    input, select, textarea { width: 100%; padding: 13px 14px; border: 1.5px solid #e5e7eb; border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 15px; background: #fff; color: var(--texto); transition: border-color 0.2s; appearance: none; -webkit-appearance: none; }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--verde-claro); box-shadow: 0 0 0 3px rgba(82,183,136,0.15); }
+    .valor-wrap { position: relative; }
+    .valor-prefix { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 15px; font-weight: 600; color: var(--texto-suave); pointer-events: none; }
+    .valor-wrap input { padding-left: 38px; font-size: 22px; font-weight: 600; font-family: 'DM Serif Display', serif; }
+    .chips { display: flex; gap: 8px; }
+    .chip { flex: 1; padding: 11px 8px; border: 1.5px solid #e5e7eb; border-radius: 10px; text-align: center; font-size: 13px; font-weight: 600; cursor: pointer; background: #fff; color: var(--texto-suave); transition: all 0.2s; }
+    .chip.active { border-color: var(--verde-claro); background: var(--verde-palido); color: var(--verde); }
+    .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 13px 14px; background: #fff; border: 1.5px solid #e5e7eb; border-radius: 10px; cursor: pointer; }
+    .toggle-label { font-size: 14px; font-weight: 500; }
+    .toggle-switch { width: 44px; height: 24px; background: #e5e7eb; border-radius: 12px; position: relative; transition: background 0.2s; flex-shrink: 0; }
+    .toggle-switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform 0.2s; box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
+    .toggle-switch.on { background: var(--verde-claro); }
+    .toggle-switch.on::after { transform: translateX(20px); }
+    .parcelas-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; overflow: hidden; max-height: 0; transition: max-height 0.3s ease; }
+    .parcelas-row.visible { max-height: 100px; }
+    .select-wrap { position: relative; }
+    .select-wrap::after { content: '▾'; position: absolute; right: 14px; top: 50%; transform: translateY(-50%); pointer-events: none; color: var(--texto-suave); font-size: 14px; }
+    .btn-submit { position: fixed; bottom: 20px; left: 16px; right: 16px; max-width: 448px; margin: 0 auto; padding: 16px; background: var(--verde); color: #fff; border: none; border-radius: 14px; font-family: 'DM Sans', sans-serif; font-size: 16px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 20px rgba(26,61,43,0.3); display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .btn-submit:active { transform: scale(0.98); }
+    .btn-submit.receita { background: var(--verde-medio); }
+    .btn-submit.loading { opacity: 0.7; pointer-events: none; }
+    .toast { position: fixed; top: 20px; left: 16px; right: 16px; max-width: 448px; margin: 0 auto; padding: 14px 16px; border-radius: 12px; font-size: 14px; font-weight: 500; transform: translateY(-80px); opacity: 0; transition: all 0.3s; z-index: 999; }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast.sucesso { background: var(--verde); color: #fff; }
+    .toast.erro { background: var(--vermelho); color: #fff; }
+    .divider { height: 1px; background: var(--creme-escuro); margin: 20px 0 16px; }
+    .divider-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--texto-suave); margin-bottom: 12px; }
+    .data-hoje { font-size: 12px; color: var(--texto-suave); margin-top: 4px; }
+  </style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<div class="header">
+  <div class="header-title">💰 Financeiro<br>Família</div>
+  <div class="header-subtitle">Narciso & Bruna · Registrar lançamento</div>
+</div>
+
+<div class="tipo-tabs">
+  <button class="tipo-tab despesa active" onclick="setTipo('Despesa')">💸 Despesa</button>
+  <button class="tipo-tab receita" onclick="setTipo('Receita')">💰 Receita</button>
+</div>
+
+<div class="form-container">
+  <div class="field-group">
+    <label>Quem está registrando?</label>
+    <div class="chips">
+      <div class="chip active" onclick="setQuem('Narciso', this)">👨 Narciso</div>
+      <div class="chip" onclick="setQuem('Bruna', this)">👩 Bruna</div>
+    </div>
+  </div>
+
+  <div class="field-group">
+    <label>Valor</label>
+    <div class="valor-wrap">
+      <span class="valor-prefix">R$</span>
+      <input type="number" id="valor" placeholder="0,00" step="0.01" min="0" inputmode="decimal">
+    </div>
+  </div>
+
+  <div class="field-group">
+    <label>Categoria</label>
+    <div class="select-wrap">
+      <select id="categoria"><option value="">Selecione...</option></select>
+    </div>
+  </div>
+
+  <div class="field-group">
+    <label>Descrição</label>
+    <input type="text" id="descricao" placeholder="Ex: Supermercado, Salário, Netflix...">
+  </div>
+
+  <div class="divider"></div>
+  <div class="divider-label">Opções adicionais</div>
+
+  <div class="field-group">
+    <div class="toggle-row" onclick="toggleFixa()">
+      <span class="toggle-label">📌 Conta fixa mensal</span>
+      <div class="toggle-switch" id="toggle-fixa"></div>
+    </div>
+  </div>
+
+  <div class="field-group">
+    <div class="toggle-row" onclick="toggleParcelado()">
+      <span class="toggle-label">💳 Compra parcelada</span>
+      <div class="toggle-switch" id="toggle-parc"></div>
+    </div>
+    <div class="parcelas-row" id="parcelas-row">
+      <div class="field-group" style="margin:0">
+        <label style="margin-top:8px">Parcela atual</label>
+        <input type="number" id="parcela-atual" placeholder="Ex: 3" min="1">
+      </div>
+      <div class="field-group" style="margin:0">
+        <label style="margin-top:8px">Total de parcelas</label>
+        <input type="number" id="parcela-total" placeholder="Ex: 12" min="1">
+      </div>
+    </div>
+  </div>
+
+  <div class="field-group">
+    <label>Data</label>
+    <input type="date" id="data">
+    <div class="data-hoje" id="data-hoje"></div>
+  </div>
+
+  <div class="field-group">
+    <label>Observação (opcional)</label>
+    <textarea id="observacao" rows="2" placeholder="Algum detalhe adicional..." style="resize:none"></textarea>
+  </div>
+</div>
+
+<button class="btn-submit" id="btn-submit" onclick="enviar()">
+  <span id="btn-icon">💸</span> <span id="btn-text">Registrar Despesa</span>
+</button>
+
+<script>
+  let tipo = 'Despesa', quem = 'Narciso', fixaOn = false, parceladoOn = false;
+  const CATS_DESPESA = ['🛒 Alimentação','🏠 Moradia','💡 Contas','🚗 Transporte','🏥 Saúde','🎬 Lazer','📚 Educação','👗 Vestuário','💳 Assinaturas','📦 Outros'];
+  const CATS_RECEITA = ['💰 Salário','💰 Renda extra','💰 Investimento','💰 Outros'];
+
+  function setTipo(t) {
+    tipo = t;
+    document.querySelectorAll('.tipo-tab').forEach(el => el.classList.remove('active'));
+    document.querySelector('.tipo-tab.' + t.toLowerCase()).classList.add('active');
+    const btn = document.getElementById('btn-submit');
+    btn.className = 'btn-submit ' + (t === 'Receita' ? 'receita' : '');
+    document.getElementById('btn-text').textContent = 'Registrar ' + t;
+    document.getElementById('btn-icon').textContent = t === 'Receita' ? '💰' : '💸';
+    updateCategorias();
+  }
+
+  function updateCategorias() {
+    const sel = document.getElementById('categoria');
+    const cats = tipo === 'Receita' ? CATS_RECEITA : CATS_DESPESA;
+    sel.innerHTML = '<option value="">Selecione...</option>' + cats.map(c => `<option value="${c}">${c}</option>`).join('');
+  }
+
+  function setQuem(nome, el) {
+    quem = nome;
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  function toggleFixa() {
+    fixaOn = !fixaOn;
+    document.getElementById('toggle-fixa').classList.toggle('on', fixaOn);
+  }
+
+  function toggleParcelado() {
+    parceladoOn = !parceladoOn;
+    document.getElementById('toggle-parc').classList.toggle('on', parceladoOn);
+    document.getElementById('parcelas-row').classList.toggle('visible', parceladoOn);
+  }
+
+  function showToast(msg, t) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = 'toast ' + t + ' show';
+    setTimeout(() => el.classList.remove('show'), 3500);
+  }
+
+  async function enviar() {
+    const valor = parseFloat(document.getElementById('valor').value);
+    const categoria = document.getElementById('categoria').value;
+    const descricao = document.getElementById('descricao').value.trim();
+    const data = document.getElementById('data').value;
+    const observacao = document.getElementById('observacao').value.trim();
+    const parcelaAtual = document.getElementById('parcela-atual').value;
+    const parcelaTotal = document.getElementById('parcela-total').value;
+
+    if (!valor || valor <= 0) { showToast('⚠️ Informe o valor', 'erro'); return; }
+    if (!categoria) { showToast('⚠️ Selecione uma categoria', 'erro'); return; }
+    if (!descricao) { showToast('⚠️ Informe a descrição', 'erro'); return; }
+    if (!data) { showToast('⚠️ Informe a data', 'erro'); return; }
+
+    const btn = document.getElementById('btn-submit');
+    btn.classList.add('loading');
+
+    const dataFormatada = data.split('-').reverse().join('/');
+    const id = Date.now().toString().slice(-6);
+    const valorTotal = parceladoOn && parcelaAtual && parcelaTotal ? (valor * parseInt(parcelaTotal)).toFixed(2) : '';
+
+    const row = [id, dataFormatada, quem, tipo, categoria, descricao,
+      valor.toFixed(2),
+      parceladoOn ? parcelaAtual : '',
+      parceladoOn ? parcelaTotal : '',
+      valorTotal,
+      fixaOn ? 'Sim' : 'Não',
+      observacao];
+
+    try {
+      const response = await fetch('/api/lancamento', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ row })
+      });
+      const result = await response.json();
+      if (result.ok) {
+        showToast('✅ Lançamento registrado!', 'sucesso');
+        ['valor','descricao','observacao','parcela-atual','parcela-total'].forEach(id => document.getElementById(id).value = '');
+        document.getElementById('categoria').value = '';
+        if (fixaOn) toggleFixa();
+        if (parceladoOn) toggleParcelado();
+      } else {
+        showToast('❌ Erro: ' + (result.error || 'Tente novamente'), 'erro');
+      }
+    } catch (e) {
+      showToast('❌ Erro de conexão', 'erro');
+    }
+    btn.classList.remove('loading');
+  }
+
+  updateCategorias();
+  const hoje = new Date();
+  document.getElementById('data').value = hoje.toISOString().split('T')[0];
+  document.getElementById('data-hoje').textContent = 'Hoje: ' + hoje.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+</script>
+</body>
+</html>

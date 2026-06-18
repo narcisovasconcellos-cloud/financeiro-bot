@@ -1,0 +1,7 @@
+# Config local de ferramentas (preview)
+.claude/
+
+# Dependências / sistema
+node_modules/
+.DS_Store
+Thumbs.db
