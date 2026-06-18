@@ -1,6 +1,9 @@
 # Config local de ferramentas (preview)
 .claude/
 
+# Artefatos da arquitetura antiga (Express/Railway) — nao publicar
+files/
+
 # Dependências / sistema
 node_modules/
 .DS_Store
