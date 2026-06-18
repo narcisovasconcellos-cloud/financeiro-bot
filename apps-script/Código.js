@@ -31,6 +31,18 @@ function doPost(e) {
       return jsonResponse({ ok: true });
     }
 
+    // Ação "reset": limpa todos os lançamentos abaixo do cabeçalho (linha 4+),
+    // preservando o cabeçalho e a formatação das colunas. Protegida por senha.
+    if (data.action === 'reset') {
+      var ssR = SpreadsheetApp.openById(SHEET_ID);
+      var shR = ssR.getSheetByName(ABA);
+      var lastR = shR.getLastRow();
+      if (lastR >= 4) {
+        shR.getRange(4, 1, lastR - 3, shR.getLastColumn()).clearContent();
+      }
+      return jsonResponse({ ok: true, limpas: Math.max(lastR - 3, 0) });
+    }
+
     const row = data.row;
     if (!Array.isArray(row)) {
       return jsonResponse({ ok: false, error: 'Dados inválidos' });
