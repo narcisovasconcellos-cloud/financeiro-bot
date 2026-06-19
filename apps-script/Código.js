@@ -19,7 +19,8 @@ const ABA = '📋 Lançamentos';
 function doPost(e) {
   try {
     const data = JSON.parse(e.postData.contents);
-    const SENHA = PropertiesService.getScriptProperties().getProperty('SENHA');
+    const props = PropertiesService.getScriptProperties();
+    const SENHA = props.getProperty('SENHA') || props.getProperty('senha');
 
     // Validação da senha (token) — vale para login e para gravação.
     if (!SENHA || data.token !== SENHA) {
