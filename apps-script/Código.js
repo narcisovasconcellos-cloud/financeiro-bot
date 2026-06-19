@@ -69,6 +69,7 @@ function doPost(e) {
     // Insere a partir da linha 4 (linhas 1–3 reservadas para título/cabeçalho).
     const proxima = Math.max(sheet.getLastRow() + 1, 4);
     sheet.getRange(proxima, 1, 1, row.length).setValues([row]);
+    sheet.getRange(proxima, 2).setNumberFormat('dd/mm/yy'); // coluna B (Data)
 
     return jsonResponse({ ok: true });
   } catch (err) {
