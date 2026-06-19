@@ -147,10 +147,15 @@ Arquivo: `apps-script/Codigo.gs`. Publicado como **App da Web** em <https://scri
 - **Deploy:** via [clasp](https://github.com/google/clasp). `clasp push` envia `apps-script/`;
   `clasp deploy -i <deploymentId>` atualiza o Web App mantendo a mesma URL `/exec`.
   Pré-requisitos (uma vez): Apps Script API habilitada, `clasp login`, propriedade `SENHA` criada.
-- **Endpoints:**
-  - `doPost(e)` com `{ action: 'verificar', token }` — valida a senha (usado pela tela de login)
-  - `doPost(e)` com `{ token, row: [...] }` — grava a linha (rejeita se `token` ≠ `SENHA`)
-  - `doGet()` — health check (retorna `{ ok: true, status: "online" }`)
+- **Endpoints (`doPost`, todos exigem `token` = SENHA):**
+  - `{ action: 'verificar' }` — valida a senha (tela de login)
+  - `{ row: [...] }` — grava novo lançamento
+  - `{ action: 'listar' }` — devolve os lançamentos (extrato): data ISO+BR, valor numérico
+  - `{ action: 'editar', id, row: [...] }` — sobrescreve a linha com aquele ID
+  - `{ action: 'apagar', id }` — remove a linha com aquele ID
+  - `{ action: 'reset' }` — limpa os lançamentos (⚠️ apaga tudo abaixo do cabeçalho)
+  - `doGet()` — health check (`{ ok: true, status: "online" }`)
+- Helpers: `normalizar(row)` (Number/Date), `acharLinhaPorId`, `listarItens`.
 
 A URL `/exec` gerada deve ser colada em `CONFIG.APPS_SCRIPT_URL` no `js/app.js`.
 
@@ -212,10 +217,10 @@ navegador.
 
 ## Próximas Melhorias
 
-- [ ] Página de resumo/extrato dentro do app
-- [ ] Filtro por mês no extrato
+- [x] Página de resumo/extrato dentro do app (com saldo do mês)
+- [x] Filtro por mês no extrato (navegador ◀ ▶)
+- [x] Editar/apagar lançamentos pelo app
 - [ ] PWA completo (manifest, ícone, offline)
-- [ ] Editar/apagar lançamentos pelo app
 
 ---
 
