@@ -50,7 +50,7 @@ body {
   z-index: 1;
 }
 
-.tipo-tabs { display: grid; grid-template-columns: 1fr 1fr; }
+.tipo-tabs { display: grid; grid-template-columns: 1fr 1fr 1fr; }
 .tipo-tab {
   padding: 14px;
   text-align: center;
@@ -64,6 +64,7 @@ body {
 }
 .tipo-tab.despesa.active { background: var(--vermelho); color: #fff; }
 .tipo-tab.receita.active { background: var(--verde-medio); color: #fff; }
+.tipo-tab.empresa.active { background: #7B2D8B; color: #fff; }
 
 .form-container { padding: 20px 16px 180px; max-width: 480px; margin: 0 auto; }
 .field-group { margin-bottom: 16px; }
@@ -218,6 +219,7 @@ input:focus, select:focus, textarea:focus {
 }
 .btn-submit:active { transform: scale(0.98); }
 .btn-submit.receita { background: var(--verde-medio); }
+.btn-submit.empresa { background: #7B2D8B; }
 .btn-submit.loading { opacity: 0.7; pointer-events: none; }
 
 .toast {
@@ -387,6 +389,19 @@ input:focus, select:focus, textarea:focus {
 .item-meta { font-size: 11px; color: var(--texto-suave); margin-top: 2px; }
 .item-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
 .item-valor { font-size: 14px; font-weight: 600; white-space: nowrap; }
+.item-empresa { border-left: 3px solid #7B2D8B; }
+.empresa-val { color: #7B2D8B; }
+.badge-empresa {
+  display: inline-block;
+  font-size: 10px;
+  background: #f3e8f7;
+  color: #7B2D8B;
+  border-radius: 4px;
+  padding: 1px 5px;
+  margin-left: 4px;
+  font-weight: 500;
+  vertical-align: middle;
+}
 .item-acoes { display: flex; gap: 4px; }
 .item-acoes button {
   border: none;

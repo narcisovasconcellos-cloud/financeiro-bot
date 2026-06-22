@@ -70,18 +70,77 @@ function doPost(e) {
       return jsonResponse({ ok: true, limpas: Math.max(last - 3, 0) });
     }
 
+    // Corrigir: limpa linhas com dados deslocados (col A vazia mas há dados na linha).
+    if (data.action === 'corrigir') {
+      var resultado = corrigirDados(sheet);
+      return jsonResponse({ ok: true, corrigidas: resultado });
+    }
+
+    // Formatar: aplica formatação condicional e numérica até a linha 1000.
+    if (data.action === 'formatar') {
+      aplicarFormatacao(sheet);
+      return jsonResponse({ ok: true });
+    }
+
+    // Criar aba Empresa com fórmulas de filtro automático.
+    if (data.action === 'criarAbaEmpresa') {
+      criarAbaEmpresa(SpreadsheetApp.openById(SHEET_ID));
+      return jsonResponse({ ok: true });
+    }
+
     // Padrão: gravar novo lançamento.
     if (!Array.isArray(data.row)) {
       return jsonResponse({ ok: false, error: 'Dados inválidos' });
     }
     const row = normalizar(data.row);
-    const proxima = Math.max(sheet.getLastRow() + 1, 4);
+    const proxima = proximaLinhaVazia(sheet);
+    // Copia formato visual da linha 5 (modelo) antes de gravar os valores
+    sheet.getRange('A5:L5').copyTo(sheet.getRange(proxima, 1, 1, 12), SpreadsheetApp.CopyPasteType.PASTE_FORMAT, false);
     sheet.getRange(proxima, 1, 1, row.length).setValues([row]);
     sheet.getRange(proxima, 2).setNumberFormat('dd/mm/yy');
+    sheet.getRange(proxima, 7).setNumberFormat('R$ #,##0.00');
+    sheet.getRange(proxima, 10).setNumberFormat('R$ #,##0.00');
     return jsonResponse({ ok: true });
   } catch (err) {
     return jsonResponse({ ok: false, error: err.message });
   }
+}
+
+// Encontra a próxima linha vazia pela coluna A (mais robusto que getLastRow).
+function proximaLinhaVazia(sheet) {
+  var last = sheet.getLastRow();
+  if (last < 4) return 4;
+  var colA = sheet.getRange(4, 1, last - 3, 1).getValues();
+  for (var i = 0; i < colA.length; i++) {
+    if (colA[i][0] === '' || colA[i][0] == null) return 4 + i;
+  }
+  return last + 1;
+}
+
+// Corrige linhas com dados deslocados: col A vazia mas resto da linha tem conteúdo.
+// Move os dados uma coluna para a esquerda e limpa a coluna extra no fim.
+function corrigirDados(sheet) {
+  var last = sheet.getLastRow();
+  if (last < 4) return 0;
+  var corrigidas = 0;
+  var totalCols = 12;
+  for (var r = 4; r <= last; r++) {
+    var rangeA = sheet.getRange(r, 1).getValue();
+    if (rangeA !== '' && rangeA != null) continue; // col A preenchida, ok
+    // Lê B até M (13 colunas) para ver se há dados deslocados
+    var vals = sheet.getRange(r, 2, 1, totalCols + 1).getValues()[0];
+    var temConteudo = vals.some(function(v) { return v !== '' && v != null; });
+    if (!temConteudo) continue;
+    // Escreve de A a L (deslocando uma coluna para a esquerda)
+    var corrected = vals.slice(0, totalCols);
+    sheet.getRange(r, 1, 1, totalCols).setValues([corrected]);
+    // Limpa a coluna M que ficou sobrando
+    sheet.getRange(r, totalCols + 2).clearContent();
+    // Reformata data (col B = índice 1 nos dados corrigidos)
+    sheet.getRange(r, 2).setNumberFormat('dd/mm/yy');
+    corrigidas++;
+  }
+  return corrigidas;
 }
 
 // Converte colunas numéricas para Number e a data "DD/MM/AAAA" para Date.
@@ -140,6 +199,137 @@ function listarItens(sheet) {
     });
   }
   return itens;
+}
+
+// Aplica formatação completa (bordas, alinhamento, cores, R$) até linha 1000.
+function aplicarFormatacao(sheet) {
+  // Copia o formato visual completo de uma linha existente (linha 5) para todo o range de dados.
+  // Isso garante bordas, fonte, alinhamento e cor de fundo idênticos.
+  var modeloRange = sheet.getRange('A5:L5');
+  var destino = sheet.getRange('A4:L1000');
+  modeloRange.copyTo(destino, SpreadsheetApp.CopyPasteType.PASTE_FORMAT, false);
+
+  // Formatos numéricos específicos por coluna
+  sheet.getRange('G4:G1000').setNumberFormat('R$ #,##0.00');
+  sheet.getRange('J4:J1000').setNumberFormat('R$ #,##0.00');
+  sheet.getRange('B4:B1000').setNumberFormat('dd/mm/yy');
+
+  // Alinhamento: ID e Data centralizados, resto à esquerda, Valor à direita
+  sheet.getRange('A4:A1000').setHorizontalAlignment('center');
+  sheet.getRange('B4:B1000').setHorizontalAlignment('center');
+  sheet.getRange('C4:C1000').setHorizontalAlignment('center');
+  sheet.getRange('D4:D1000').setHorizontalAlignment('center');
+  sheet.getRange('G4:G1000').setHorizontalAlignment('right');
+  sheet.getRange('H4:H1000').setHorizontalAlignment('center');
+  sheet.getRange('I4:I1000').setHorizontalAlignment('center');
+  sheet.getRange('J4:J1000').setHorizontalAlignment('right');
+  sheet.getRange('K4:K1000').setHorizontalAlignment('center');
+
+  // Formatação condicional: cores por tipo e conta fixa
+  var ruleLinhReceita = SpreadsheetApp.newConditionalFormatRule()
+    .whenFormulaSatisfied('=$D4="Receita"')
+    .setBackground('#EAF4EC')
+    .setRanges([sheet.getRange('A4:L1000')])
+    .build();
+
+  var ruleDespesa = SpreadsheetApp.newConditionalFormatRule()
+    .whenTextEqualTo('Despesa')
+    .setFontColor('#C0392B')
+    .setBold(true)
+    .setRanges([sheet.getRange('D4:D1000')])
+    .build();
+
+  var ruleReceita = SpreadsheetApp.newConditionalFormatRule()
+    .whenTextEqualTo('Receita')
+    .setFontColor('#1E8449')
+    .setBold(true)
+    .setRanges([sheet.getRange('D4:D1000')])
+    .build();
+
+  var ruleFixa = SpreadsheetApp.newConditionalFormatRule()
+    .whenTextEqualTo('Sim')
+    .setFontColor('#E67E22')
+    .setRanges([sheet.getRange('K4:K1000')])
+    .build();
+
+  sheet.setConditionalFormatRules([ruleLinhReceita, ruleDespesa, ruleReceita, ruleFixa]);
+}
+
+// Cria (ou recria) a aba 🏢 Empresa com filtro automático dos lançamentos da empresa.
+function criarAbaEmpresa(ss) {
+  var nomeAba = '🏢 Empresa';
+  var abaExistente = ss.getSheetByName(nomeAba);
+  if (abaExistente) ss.deleteSheet(abaExistente);
+
+  var aba = ss.insertSheet(nomeAba);
+
+  // Cabeçalho título
+  aba.getRange('A1:F1').merge()
+    .setValue('🏢 CUSTOS DA EMPRESA — Bruna')
+    .setBackground('#4A0E5C')
+    .setFontColor('#FFFFFF')
+    .setFontSize(14)
+    .setFontWeight('bold')
+    .setHorizontalAlignment('center')
+    .setVerticalAlignment('middle');
+  aba.setRowHeight(1, 40);
+
+  // Subtítulo
+  aba.getRange('A2:F2').merge()
+    .setValue('Lançamentos com tipo "Empresa" — atualizados automaticamente')
+    .setBackground('#7B2D8B')
+    .setFontColor('#F3E8F7')
+    .setFontSize(10)
+    .setHorizontalAlignment('center');
+
+  // Cards de resumo
+  aba.getRange('A3').setValue('Total do Mês Atual').setFontWeight('bold').setBackground('#F3E8F7');
+  aba.getRange('B3').setFormula('=SUMPRODUCT((TEXT(\'📋 Lançamentos\'!B4:B1000,"yyyy-mm")=TEXT(TODAY(),"yyyy-mm"))*(\'📋 Lançamentos\'!D4:D1000="Empresa"),\'📋 Lançamentos\'!G4:G1000)')
+    .setNumberFormat('R$ #,##0.00').setBackground('#F3E8F7').setFontWeight('bold').setFontColor('#7B2D8B');
+
+  aba.getRange('C3').setValue('Total Geral').setFontWeight('bold').setBackground('#F3E8F7');
+  aba.getRange('D3').setFormula('=SUMIF(\'📋 Lançamentos\'!D4:D1000,"Empresa",\'📋 Lançamentos\'!G4:G1000)')
+    .setNumberFormat('R$ #,##0.00').setBackground('#F3E8F7').setFontWeight('bold').setFontColor('#7B2D8B');
+
+  aba.getRange('E3').setValue('Nº Lançamentos').setFontWeight('bold').setBackground('#F3E8F7');
+  aba.getRange('F3').setFormula('=COUNTIF(\'📋 Lançamentos\'!D4:D1000,"Empresa")')
+    .setBackground('#F3E8F7').setFontWeight('bold').setFontColor('#7B2D8B');
+
+  // Cabeçalho da tabela
+  var headers = ['Data', 'Quem', 'Categoria', 'Descrição', 'Valor (R$)', 'Observação'];
+  var headerRange = aba.getRange(4, 1, 1, headers.length);
+  headerRange.setValues([headers])
+    .setBackground('#4A0E5C')
+    .setFontColor('#FFFFFF')
+    .setFontWeight('bold')
+    .setHorizontalAlignment('center');
+  aba.setRowHeight(4, 30);
+
+  // Fórmula QUERY para filtrar lançamentos do tipo Empresa automaticamente
+  aba.getRange('A5').setFormula(
+    '=IFERROR(QUERY(\'📋 Lançamentos\'!A4:L1000,"SELECT B,C,E,F,G,L WHERE D=\'Empresa\' ORDER BY B DESC",0),"")'
+  );
+
+  // Formatação das colunas de dados
+  aba.getRange('A5:A1000').setNumberFormat('dd/mm/yy').setHorizontalAlignment('center');
+  aba.getRange('B5:B1000').setHorizontalAlignment('center');
+  aba.getRange('E5:E1000').setNumberFormat('R$ #,##0.00').setHorizontalAlignment('right');
+
+  // Larguras das colunas
+  aba.setColumnWidth(1, 90);
+  aba.setColumnWidth(2, 80);
+  aba.setColumnWidth(3, 160);
+  aba.setColumnWidth(4, 200);
+  aba.setColumnWidth(5, 110);
+  aba.setColumnWidth(6, 180);
+
+  // Congela as 4 primeiras linhas
+  aba.setFrozenRows(4);
+
+  // Move a aba para logo após Lançamentos
+  var sheets = ss.getSheets();
+  var indexLanc = sheets.findIndex(function(s) { return s.getName() === '📋 Lançamentos'; });
+  if (indexLanc >= 0) ss.setActiveSheet(aba), ss.moveActiveSheet(indexLanc + 2);
 }
 
 // Health check — abrir a URL /exec no navegador deve mostrar "online".

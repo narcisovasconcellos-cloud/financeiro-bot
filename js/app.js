@@ -19,6 +19,7 @@ let extratoCarregado = false;
 
 const CATS_DESPESA = ['🛒 Alimentação','🏠 Moradia','💡 Contas','🚗 Transporte','🏥 Saúde','🎬 Lazer','📚 Educação','👗 Vestuário','💳 Assinaturas','📦 Outros'];
 const CATS_RECEITA = ['💰 Salário','💰 Renda extra','💰 Investimento','💰 Outros'];
+const CATS_EMPRESA = ['🧴 Produtos & Insumos','💉 Materiais de Procedimento','📋 Cursos & Capacitação','🧾 Impostos & Taxas','🏢 Custos Fixos','🛍️ Equipamentos','💼 Administrativo','📦 Outros'];
 const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
 /* ===================== Comunicação com o backend ===================== */
@@ -41,14 +42,14 @@ function setTipo(t) {
   document.querySelectorAll('.tipo-tab').forEach(el => el.classList.remove('active'));
   document.querySelector('.tipo-tab.' + t.toLowerCase()).classList.add('active');
   const btn = document.getElementById('btn-submit');
-  btn.className = 'btn-submit ' + (t === 'Receita' ? 'receita' : '');
+  btn.className = 'btn-submit ' + (t === 'Receita' ? 'receita' : t === 'Empresa' ? 'empresa' : '');
   atualizarBotao();
   updateCategorias();
 }
 
 function updateCategorias(manter) {
   const sel = document.getElementById('categoria');
-  const cats = tipo === 'Receita' ? CATS_RECEITA : CATS_DESPESA;
+  const cats = tipo === 'Receita' ? CATS_RECEITA : tipo === 'Empresa' ? CATS_EMPRESA : CATS_DESPESA;
   sel.innerHTML = '<option value="">Selecione...</option>' + cats.map(c => `<option value="${c}">${c}</option>`).join('');
   if (manter) sel.value = manter;
 }
@@ -79,7 +80,7 @@ function toggleParcelado() { setParcelado(!parceladoOn); }
 function atualizarBotao() {
   const txt = editId ? 'Salvar alterações' : ('Registrar ' + tipo);
   document.getElementById('btn-text').textContent = txt;
-  document.getElementById('btn-icon').textContent = editId ? '💾' : (tipo === 'Receita' ? '💰' : '💸');
+  document.getElementById('btn-icon').textContent = editId ? '💾' : (tipo === 'Receita' ? '💰' : tipo === 'Empresa' ? '🏢' : '💸');
 }
 
 /* ===================== Login ===================== */
@@ -247,14 +248,17 @@ function renderExtrato() {
 
   const doMes = todosItens.filter(it => (it.dataISO || '').slice(0, 7) === ym);
 
-  let receitas = 0, despesas = 0;
+  let receitas = 0, despesas = 0, empresa = 0;
   doMes.forEach(it => {
     const v = Number(it.valor) || 0;
-    if (it.tipo === 'Receita') receitas += v; else despesas += v;
+    if (it.tipo === 'Receita') receitas += v;
+    else if (it.tipo === 'Empresa') empresa += v;
+    else despesas += v;
   });
-  const saldo = receitas - despesas;
+  const saldo = receitas - despesas - empresa;
   document.getElementById('s-receitas').textContent = formatBRL(receitas);
   document.getElementById('s-despesas').textContent = formatBRL(despesas);
+  document.getElementById('s-empresa').textContent = formatBRL(empresa);
   const elSaldo = document.getElementById('s-saldo');
   elSaldo.textContent = formatBRL(saldo);
   elSaldo.className = saldo < 0 ? 'neg' : 'pos';
@@ -270,19 +274,21 @@ function renderExtrato() {
 
   lista.innerHTML = doMes.map(it => {
     const receita = it.tipo === 'Receita';
+    const empresa = it.tipo === 'Empresa';
     const sinal = receita ? '+' : '−';
     const emoji = (it.categoria || '').split(' ')[0] || '•';
     const parc = (it.parcelaAtual && it.parcelaTotal) ? ` · ${it.parcelaAtual}/${it.parcelaTotal}x` : '';
     const fixa = it.fixa === 'Sim' ? ' · 📌' : '';
+    const empresaBadge = empresa ? ' <span class="badge-empresa">🏢 Empresa</span>' : '';
     return `
-      <div class="item">
+      <div class="item${empresa ? ' item-empresa' : ''}">
         <div class="item-emoji">${emoji}</div>
         <div class="item-info">
-          <div class="item-desc">${escapeHtml(it.descricao || '(sem descrição)')}</div>
+          <div class="item-desc">${escapeHtml(it.descricao || '(sem descrição)')}${empresaBadge}</div>
           <div class="item-meta">${escapeHtml(it.quem || '')} · ${it.dataBR || ''}${parc}${fixa}</div>
         </div>
         <div class="item-right">
-          <div class="item-valor ${receita ? 'pos' : 'neg'}">${sinal} ${formatBRL(it.valor)}</div>
+          <div class="item-valor ${receita ? 'pos' : empresa ? 'empresa-val' : 'neg'}">${sinal} ${formatBRL(it.valor)}</div>
           <div class="item-acoes">
             <button onclick="editarItem('${it.id}')" aria-label="Editar">✏️</button>
             <button onclick="apagarItem('${it.id}')" aria-label="Apagar">🗑️</button>
