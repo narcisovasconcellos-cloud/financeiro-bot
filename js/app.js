@@ -69,6 +69,10 @@ function setParcelado(on) {
   parceladoOn = on;
   document.getElementById('toggle-parc').classList.toggle('on', on);
   document.getElementById('parcelas-row').classList.toggle('visible', on);
+  if (on) {
+    const pa = document.getElementById('parcela-atual');
+    if (!pa.value) pa.value = '1'; // compra nova começa na parcela 1
+  }
 }
 function toggleParcelado() { setParcelado(!parceladoOn); }
 

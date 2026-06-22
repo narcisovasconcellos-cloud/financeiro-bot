@@ -90,12 +90,16 @@
       </div>
       <div class="parcelas-row" id="parcelas-row">
         <div class="field-group" style="margin:0">
-          <label style="margin-top:8px">Parcela atual</label>
-          <input type="number" id="parcela-atual" placeholder="Ex: 3" min="1">
+          <label style="margin-top:8px">Total de parcelas</label>
+          <input type="number" id="parcela-total" placeholder="Ex: 12" min="1" inputmode="numeric">
         </div>
         <div class="field-group" style="margin:0">
-          <label style="margin-top:8px">Total de parcelas</label>
-          <input type="number" id="parcela-total" placeholder="Ex: 12" min="1">
+          <label style="margin-top:8px">Parcela atual</label>
+          <input type="number" id="parcela-atual" value="1" min="1" inputmode="numeric">
+        </div>
+        <div class="parc-ajuda">
+          Normalmente deixe a <b>parcela atual em 1</b> (compra nova). Só mude se o
+          parcelamento já começou antes — ex: você já está na 5ª de 12.
         </div>
       </div>
     </div>

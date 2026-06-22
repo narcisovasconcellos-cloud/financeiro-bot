@@ -171,7 +171,18 @@ input:focus, select:focus, textarea:focus {
   max-height: 0;
   transition: max-height 0.3s ease;
 }
-.parcelas-row.visible { max-height: 120px; }
+.parcelas-row.visible { max-height: 180px; }
+.parc-ajuda {
+  grid-column: 1 / -1;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--texto-suave);
+  background: var(--verde-palido);
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-top: 4px;
+}
+.parc-ajuda b { color: var(--verde); }
 
 .select-wrap { position: relative; }
 .select-wrap::after {
