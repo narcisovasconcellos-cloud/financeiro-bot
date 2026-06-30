@@ -256,8 +256,19 @@ function aplicarFormatacao(sheet) {
 }
 
 // Cria (ou recria) a aba 🏢 Empresa com filtro automático dos lançamentos da empresa.
+// Usa named ranges (LanData/LanTipo/LanValor/LanTodos) para evitar emoji nas fórmulas.
 function criarAbaEmpresa(ss) {
   var nomeAba = '🏢 Empresa';
+  var lanSheet = ss.getSheetByName(ABA); // ABA = '📋 Lançamentos'
+
+  // Cria (ou atualiza) named ranges para as colunas-chave de Lançamentos
+  // Usando Named Ranges, as fórmulas na aba Empresa não precisam referenciar
+  // o emoji/cedilha do nome da aba — evita #ERROR! de parsing.
+  ss.setNamedRange('LanData',  lanSheet.getRange('B4:B1000'));
+  ss.setNamedRange('LanTipo',  lanSheet.getRange('D4:D1000'));
+  ss.setNamedRange('LanValor', lanSheet.getRange('G4:G1000'));
+  ss.setNamedRange('LanTodos', lanSheet.getRange('A4:L1000'));
+
   var abaExistente = ss.getSheetByName(nomeAba);
   if (abaExistente) ss.deleteSheet(abaExistente);
 
@@ -282,17 +293,17 @@ function criarAbaEmpresa(ss) {
     .setFontSize(10)
     .setHorizontalAlignment('center');
 
-  // Cards de resumo
+  // Cards de resumo — usam named ranges (sem emoji nas fórmulas)
   aba.getRange('A3').setValue('Total do Mês Atual').setFontWeight('bold').setBackground('#F3E8F7');
-  aba.getRange('B3').setFormula('=SUMPRODUCT((TEXT(\'📋 Lançamentos\'!B4:B1000,"yyyy-mm")=TEXT(TODAY(),"yyyy-mm"))*(\'📋 Lançamentos\'!D4:D1000="Empresa"),\'📋 Lançamentos\'!G4:G1000)')
+  aba.getRange('B3').setFormula('=SUMPRODUCT((TEXT(LanData,"yyyy-mm")=TEXT(TODAY(),"yyyy-mm"))*(LanTipo="Empresa"),LanValor)')
     .setNumberFormat('R$ #,##0.00').setBackground('#F3E8F7').setFontWeight('bold').setFontColor('#7B2D8B');
 
   aba.getRange('C3').setValue('Total Geral').setFontWeight('bold').setBackground('#F3E8F7');
-  aba.getRange('D3').setFormula('=SUMIF(\'📋 Lançamentos\'!D4:D1000,"Empresa",\'📋 Lançamentos\'!G4:G1000)')
+  aba.getRange('D3').setFormula('=SUMIF(LanTipo,"Empresa",LanValor)')
     .setNumberFormat('R$ #,##0.00').setBackground('#F3E8F7').setFontWeight('bold').setFontColor('#7B2D8B');
 
   aba.getRange('E3').setValue('Nº Lançamentos').setFontWeight('bold').setBackground('#F3E8F7');
-  aba.getRange('F3').setFormula('=COUNTIF(\'📋 Lançamentos\'!D4:D1000,"Empresa")')
+  aba.getRange('F3').setFormula('=COUNTIF(LanTipo,"Empresa")')
     .setBackground('#F3E8F7').setFontWeight('bold').setFontColor('#7B2D8B');
 
   // Cabeçalho da tabela
@@ -305,9 +316,9 @@ function criarAbaEmpresa(ss) {
     .setHorizontalAlignment('center');
   aba.setRowHeight(4, 30);
 
-  // Fórmula QUERY para filtrar lançamentos do tipo Empresa automaticamente
+  // QUERY usando LanTodos (named range) — Col1=A,Col2=B,Col3=C,Col4=D,Col5=E,Col6=F,Col7=G,Col12=L
   aba.getRange('A5').setFormula(
-    '=IFERROR(QUERY(\'📋 Lançamentos\'!A4:L1000,"SELECT B,C,E,F,G,L WHERE D=\'Empresa\' ORDER BY B DESC",0),"")'
+    '=IFERROR(QUERY(LanTodos,"SELECT Col2,Col3,Col5,Col6,Col7,Col12 WHERE Col4=\'Empresa\' ORDER BY Col2 DESC",0),"")'
   );
 
   // Formatação das colunas de dados
@@ -328,8 +339,17 @@ function criarAbaEmpresa(ss) {
 
   // Move a aba para logo após Lançamentos
   var sheets = ss.getSheets();
-  var indexLanc = sheets.findIndex(function(s) { return s.getName() === '📋 Lançamentos'; });
-  if (indexLanc >= 0) ss.setActiveSheet(aba), ss.moveActiveSheet(indexLanc + 2);
+  var lanIdx = -1;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].getName() === ABA) { lanIdx = i; break; }
+  }
+  if (lanIdx >= 0) { ss.setActiveSheet(aba); ss.moveActiveSheet(lanIdx + 2); }
+}
+
+// Função auxiliar para rodar MANUALMENTE no editor do Apps Script.
+// Selecionar esta função no dropdown e clicar em "Executar".
+function executarCriarEmpresa() {
+  criarAbaEmpresa(SpreadsheetApp.openById(SHEET_ID));
 }
 
 // Health check — abrir a URL /exec no navegador deve mostrar "online".
