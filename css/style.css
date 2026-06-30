@@ -65,6 +65,7 @@ body {
 .tipo-tab.despesa.active { background: var(--vermelho); color: #fff; }
 .tipo-tab.receita.active { background: var(--verde-medio); color: #fff; }
 .tipo-tab.empresa.active { background: #7B2D8B; color: #fff; }
+.btn-submit.empresa { background: #7B2D8B; }
 
 .form-container { padding: 20px 16px 180px; max-width: 480px; margin: 0 auto; }
 .field-group { margin-bottom: 16px; }
